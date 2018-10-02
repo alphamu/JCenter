@@ -2,15 +2,37 @@ apply plugin: 'com.jfrog.bintray'
 
 version = libraryVersion
 
-if (project.hasProperty("android")) { // Android libraries
+if (project.hasProperty("kotlin")) { //Kotlin libraries
+    task sourcesJar(type: Jar) {
+        classifier = 'sources'
+        from android.sourceSets.main.java.srcDirs
+    }
+
+    task javadoc(type: Javadoc, dependsOn: dokka) {
+        classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+        android.libraryVariants.all { variant ->
+            if (variant.name == 'release') {
+                owner.classpath += variant.javaCompileProvider.get().classpath
+            }
+        }
+        source = android.sourceSets.main.java.srcDirs
+        exclude '**/R.html', '**/R.*.html', '**/index.html', 'com/support/**', 'androidx/**'
+    }
+} else if (project.hasProperty("android")) { // Android libraries
     task sourcesJar(type: Jar) {
         classifier = 'sources'
         from android.sourceSets.main.java.srcDirs
     }
 
     task javadoc(type: Javadoc) {
-        source = android.sourceSets.main.java.srcDirs
         classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+        android.libraryVariants.all { variant ->
+            if (variant.name == 'release') {
+                owner.classpath += variant.javaCompileProvider.get().classpath
+            }
+        }
+        source = android.sourceSets.main.java.srcDirs
+        exclude '**/R.html', '**/R.*.html', '**/index.html', 'com/support/**', 'androidx/**'
     }
 } else { // Java libraries
     task sourcesJar(type: Jar, dependsOn: classes) {
